@@ -2,14 +2,41 @@
 
 <div align="center">
 
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Spring AI](https://img.shields.io/badge/Spring%20AI-1.0.0--M5-blue.svg)](https://spring.io/projects/spring-ai)
-[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<!-- Logo 区域 -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=Fira+Code&size=35&duration=2000&pause=1000&color=6DB33F&center=true&vCenter=true&width=435&lines=📚🤖+Spring+AI+RAG">
+  <img alt="Logo" src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=35&duration=2000&pause=1000&color=6DB33F&center=true&vCenter=true&width=435&lines=📚🤖+Spring+AI+RAG">
+</picture>
 
-基于 Spring AI + Ollama + PGVector 的本地部署 RAG (检索增强生成) 系统
+<h1>Spring AI RAG 文档问答系统</h1>
 
-[功能特性](#-功能特性) • [快速开始](#-快速开始) • [API 文档](#-api-使用) • [配置说明](#️-配置说明)
+<p>
+  <strong>基于 Spring AI + Ollama + PGVector 的本地部署 RAG 系统</strong>
+</p>
+
+[![GitHub stars](https://img.shields.io/github/stars/Robbin-zjc/-spring-ai-RAG-ollama-documind?style=for-the-badge&logo=github)](https://github.com/Robbin-zjc/-spring-ai-RAG-ollama-documind/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Robbin-zjc/-spring-ai-RAG-ollama-documind?style=for-the-badge&logo=github)](https://github.com/Robbin-zjc/-spring-ai-RAG-ollama-documind/network)
+[![GitHub issues](https://img.shields.io/github/issues/Robbin-zjc/-spring-ai-RAG-ollama-documind?style=for-the-badge&logo=github)](https://github.com/Robbin-zjc/-spring-ai-RAG-ollama-documind/issues)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
+
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.1-brightgreen?style=flat-square&logo=spring-boot)
+![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk)
+![Spring AI](https://img.shields.io/badge/Spring%20AI-1.0.0--M5-blue?style=flat-square)
+![Ollama](https://img.shields.io/badge/Ollama-Llama%203.2-black?style=flat-square)
+![PGVector](https://img.shields.io/badge/PGVector-0.7.0-blue?style=flat-square&logo=postgresql)
+
+![RAG](https://img.shields.io/badge/RAG-System-purple?style=flat-square)
+![本地部署](https://img.shields.io/badge/本地部署-✓-success?style=flat-square)
+![开源](https://img.shields.io/badge/开源-❤-red?style=flat-square)
+
+---
+
+<p>
+  <a href="#-功能特性">功能特性</a> •
+  <a href="#-快速开始">快速开始</a> •
+  <a href="#-api-使用">API 文档</a> •
+  <a href="#️-配置说明">配置说明</a>
+</p>
 
 </div>
 
