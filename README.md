@@ -3,7 +3,6 @@
 <div align="center">
 
 <!-- Logo 区域 -->
-<img src="logo.png" alt="DocuMind Logo" width="180"/>
 <img src="logo.png" alt="DocuMind Logo" width="180" style="border-radius: 12px;"/>
 
 <h1>Spring AI RAG 文档问答系统</h1>
