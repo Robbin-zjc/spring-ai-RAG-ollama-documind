@@ -71,3 +71,8 @@ uploads/
 # Environment
 .env
 application-local.properties
+
+# Docker volumes (不要提交数据库数据)
+volume-data/
+postgres-data/
+pgvector-data/
