@@ -3,10 +3,8 @@
 <div align="center">
 
 <!-- Logo 区域 -->
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=Fira+Code&size=35&duration=2000&pause=1000&color=6DB33F&center=true&vCenter=true&width=435&lines=📚🤖+Spring+AI+RAG">
-  <img alt="Logo" src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=35&duration=2000&pause=1000&color=6DB33F&center=true&vCenter=true&width=435&lines=📚🤖+Spring+AI+RAG">
-</picture>
+<img src="logo.png" alt="DocuMind Logo" width="180"/>
+<img src="logo.png" alt="DocuMind Logo" width="180" style="border-radius: 12px;"/>
 
 <h1>Spring AI RAG 文档问答系统</h1>
 
