@@ -11,13 +11,30 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * RAG 核心服务：负责“检索 + 组装提示词 + 质检提示词”等关键逻辑。
+ *
+ * <p>核心能力：
+ * <ul>
+ *   <li>查询扩展（Query Expansion）提升召回</li>
+ *   <li>向量检索 + 关键词融合（Hybrid Dense + Lexical）</li>
+ *   <li>多查询结果融合与重排序（RRF + rerank）</li>
+ *   <li>元数据过滤（按文件名/文件类型）</li>
+ *   <li>来源覆盖控制（避免答案只来自单一文档）</li>
+ * </ul>
+ */
 @Service
 public class RAGService {
 
     private static final Logger log = LoggerFactory.getLogger(RAGService.class);
 
+    /** 向量检索入口（PGVector）。 */
     private final VectorStore vectorStore;
+
+    /** 查询扩展器：将一个问题扩展成多个子查询。 */
     private final QueryExpander queryExpander;
+
+    /** 结果重排器：融合与重排序，提升相关性与完整性。 */
     private final DocumentReranker documentReranker;
 
     @Value("${rag.search.topk:20}")
@@ -51,16 +68,27 @@ public class RAGService {
         this.documentReranker = documentReranker;
     }
 
+    /**
+     * 默认检索入口：不带文件过滤条件。
+     */
     public List<Document> hybridSearch(String question) {
         return hybridSearch(question, RetrievalOptions.defaultOptions());
     }
 
     /**
-     * 进阶混合检索：
-     * - 多查询扩展 + RRF 融合
-     * - Dense + Lexical late-fusion
-     * - Metadata 过滤（文件名/文件类型）
-     * - 跨来源覆盖控制
+     * 进阶混合检索主流程：
+     * <ol>
+     *   <li>根据问题类型动态计算 topK 与相似度阈值</li>
+     *   <li>生成扩展查询并分别检索</li>
+     *   <li>去重并按来源/类型进行 metadata 过滤</li>
+     *   <li>必要时补充检索（放宽阈值）避免结果过少</li>
+     *   <li>执行融合重排与 dense+lexical 二次打分</li>
+     *   <li>按来源覆盖策略裁剪最终结果</li>
+     * </ol>
+     *
+     * @param question 用户问题
+     * @param options 检索过滤选项（文件名、文件类型）
+     * @return 最终用于回答的证据片段列表
      */
     public List<Document> hybridSearch(String question, RetrievalOptions options) {
         long startTime = System.currentTimeMillis();
@@ -122,6 +150,16 @@ public class RAGService {
         return finalResults;
     }
 
+    /**
+     * Dense + Lexical 融合重打分。
+     *
+     * <p>思想：
+     * <ul>
+     *   <li>Dense 分：使用当前排序位置近似（越靠前分越高）</li>
+     *   <li>Lexical 分：统计问题关键词在文档中的命中数</li>
+     *   <li>按 lexicalWeight 融合，兼顾语义相似和术语精确匹配</li>
+     * </ul>
+     */
     private List<Document> hybridDenseLexicalRescore(List<Document> docs, String question) {
         if (docs.isEmpty()) {
             return docs;
@@ -177,6 +215,11 @@ public class RAGService {
             .toList();
     }
 
+    /**
+     * 元数据过滤：限制检索结果只来自指定文件 / 文件类型。
+     *
+     * <p>注意：当前采用“检索后过滤”策略，兼容性更好、改造成本更低。
+     */
     private List<Document> applyMetadataFilter(List<Document> docs, RetrievalOptions options) {
         if (docs == null || docs.isEmpty()) {
             return Collections.emptyList();
@@ -199,6 +242,15 @@ public class RAGService {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * 根据问题类型动态调整检索参数。
+     *
+     * <p>策略：
+     * <ul>
+     *   <li>列举类问题：提高 topK、降低阈值（优先召回）</li>
+     *   <li>定义类问题：降低 topK、提高阈值（优先精度）</li>
+     * </ul>
+     */
     private SearchConfig determineSearchConfig(String question) {
         int topK = defaultTopK;
         double threshold = defaultThreshold;
@@ -315,6 +367,12 @@ public class RAGService {
         return false;
     }
 
+    /**
+     * 构建主回答 Prompt。
+     *
+     * <p>将检索到的文档片段按编号拼接，并明确要求模型：
+     * 引用证据、避免臆测、尽量覆盖完整信息。
+     */
     public String buildPrompt(String question, List<Document> docs) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("你是一个精确的文档问答助手。\\n\\n");
@@ -339,6 +397,11 @@ public class RAGService {
         return prompt.toString();
     }
 
+    /**
+     * 构建答案质检 Prompt。
+     *
+     * <p>用于二次校验“候选答案是否被证据支持”，并在 FAIL 时给出修订答案。
+     */
     public String buildVerificationPrompt(String question, String answer, List<Document> docs) {
         StringBuilder p = new StringBuilder();
         p.append("你是答案质检器。请检查【候选答案】是否被【证据片段】支持。\\n");

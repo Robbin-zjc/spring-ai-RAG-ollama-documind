@@ -13,6 +13,17 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Embedding 模型就绪检查服务。
+ *
+ * <p>用途：
+ * <ul>
+ *   <li>在应用运行前检查 Ollama 是否已安装指定 embedding 模型</li>
+ *   <li>可选自动触发模型拉取（pull）</li>
+ * </ul>
+ *
+ * <p>这样可以减少“上传文档时才发现模型缺失”的运行时错误。
+ */
 @Service
 public class OllamaEmbeddingModelService {
 
@@ -37,6 +48,11 @@ public class OllamaEmbeddingModelService {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 确保 embedding 模型可用。
+     *
+     * <p>流程：先检查 tags；若不存在且允许自动拉取，则调用 /api/pull；最后再次校验。
+     */
     public void ensureEmbeddingModelReady() {
         if (isModelAvailable()) {
             return;

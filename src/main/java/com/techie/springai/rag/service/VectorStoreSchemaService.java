@@ -7,6 +7,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+/**
+ * 向量表结构自检服务。
+ *
+ * <p>目的：避免“模型 embedding 维度”与“数据库向量列维度”不一致导致入库失败。
+ * 在应用启动后自动检测并尝试修复（必要时清空向量表再改列类型）。
+ */
 @Service
 public class VectorStoreSchemaService {
 
@@ -21,6 +27,11 @@ public class VectorStoreSchemaService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * 启动后执行维度对齐检查。
+     *
+     * <p>注意：当维度不一致时会 TRUNCATE vector_store，请确保这是可接受行为。
+     */
     @PostConstruct
     public void alignVectorDimensions() {
         try {

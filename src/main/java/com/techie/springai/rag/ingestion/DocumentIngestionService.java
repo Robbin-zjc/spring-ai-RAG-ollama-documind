@@ -11,6 +11,17 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
+/**
+ * 启动时自动导入示例文档的服务（当前默认关闭）。
+ *
+ * <p>用途：
+ * <ul>
+ *   <li>本地演示/测试时快速初始化向量库</li>
+ *   <li>避免每次手动上传样例文档</li>
+ * </ul>
+ *
+ * <p>启用方式：取消 @Service 注释。
+ */
 //@Service
 public class DocumentIngestionService implements CommandLineRunner {
 

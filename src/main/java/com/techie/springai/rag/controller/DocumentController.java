@@ -27,11 +27,26 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 文档与问答主控制器（项目核心 API 入口）。
+ *
+ * <p>主要职责：
+ * <ul>
+ *   <li>文档上传、解析、切分、向量化入库</li>
+ *   <li>文档列表查询与删除</li>
+ *   <li>RAG 问答（普通 / 流式 SSE）</li>
+ *   <li>会话管理（创建、查询、清理）</li>
+ * </ul>
+ *
+ * <p>架构位置：Controller 层，负责参数校验、调用服务层、组装响应。
+ */
 @RestController
 @RequestMapping("/api")
 public class DocumentController {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentController.class);
+
+    /** 上传目录（相对项目根路径）。 */
     private static final String UPLOAD_DIR = "uploads/";
 
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
@@ -61,6 +76,15 @@ public class DocumentController {
         new File(UPLOAD_DIR).mkdirs();
     }
 
+    /**
+     * 上传接口（支持单文件与多文件）。
+     *
+     * <p>行为：
+     * <ul>
+     *   <li>若仅 1 个文件：走单文件流程并返回 single 模式结果</li>
+     *   <li>若多个文件：自动切换到批量流程并返回 batch 汇总</li>
+     * </ul>
+     */
     @PostMapping("/upload")
     public ResponseEntity<Map<String, Object>> uploadDocument(
         @RequestParam(value = "file", required = false) MultipartFile file,
@@ -253,6 +277,12 @@ public class DocumentController {
         return ResponseEntity.ok(Map.of("sessionId", sessionId, "cleared", removed));
     }
 
+    /**
+     * 非流式问答接口。
+     *
+     * <p>主链路：
+     * 问题校验 -> 检索（可带过滤）-> 构建 Prompt -> 生成草稿 -> 质检修订 -> 保存会话 -> 返回答案与 citations。
+     */
     @PostMapping("/query")
     public ResponseEntity<Map<String, Object>> query(@RequestBody Map<String, Object> request) {
         try {
@@ -311,6 +341,18 @@ public class DocumentController {
         }
     }
 
+    /**
+     * 流式问答接口（SSE）。
+     *
+     * <p>前端可边接收 token 边渲染，降低用户等待感。
+     * 事件类型：
+     * <ul>
+     *   <li>token：流式文本分片</li>
+     *   <li>meta：来源与引用等元信息</li>
+     *   <li>done：结束标记</li>
+     *   <li>error：异常信息</li>
+     * </ul>
+     */
     @PostMapping(value = "/query/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter queryStream(@RequestBody Map<String, Object> request) {
         SseEmitter emitter = new SseEmitter(0L);
@@ -388,6 +430,19 @@ public class DocumentController {
         return emitter;
     }
 
+    /**
+     * 单文件入库主流程。
+     *
+     * <p>处理步骤：
+     * <ol>
+     *   <li>参数校验（空文件、非法扩展名、空内容）</li>
+     *   <li>保存到 uploads 目录</li>
+     *   <li>解析为 Document 列表（文本优先，复杂格式走 Tika）</li>
+     *   <li>按文件类型选择切分参数并切分</li>
+     *   <li>写入向量库</li>
+     * </ol>
+     * 若任一步骤失败，会尝试删除已保存文件，避免“落盘成功但向量失败”的脏状态。
+     */
     private String ingestSingleFile(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("文件不能为空");
@@ -447,6 +502,14 @@ public class DocumentController {
         }
     }
 
+    /**
+     * 根据文件类型解析文档：
+     * <ul>
+     *   <li>文本类：直接按 UTF-8 读取</li>
+     *   <li>图片类：当前不做 OCR，明确提示用户</li>
+     *   <li>其余类型：交由 Tika 统一解析</li>
+     * </ul>
+     */
     private List<Document> readAsDocumentsWithFallback(Path filepath, String extension) throws IOException {
         if (isTextLike(extension)) {
             String content = Files.readString(filepath, StandardCharsets.UTF_8);
@@ -494,6 +557,16 @@ public class DocumentController {
         return sb.toString();
     }
 
+    /**
+     * 自适应切分策略：不同文档体裁使用不同 chunk 参数。
+     *
+     * <p>经验：
+     * <ul>
+     *   <li>PDF/PPT：通常段落跨度大，适当增大 chunk 与 overlap</li>
+     *   <li>文本文档：使用中等切分参数</li>
+     *   <li>结构化内容（CSV/JSON/XML）：缩小 chunk，减少“跨字段拼接”噪声</li>
+     * </ul>
+     */
     private TextSplitter createAdaptiveSplitter(String extension) {
         return switch (extension) {
             case "ppt", "pptx", "pdf" -> new TokenTextSplitter(700, 180, 5, 12000, true);

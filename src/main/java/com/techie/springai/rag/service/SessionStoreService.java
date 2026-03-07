@@ -11,10 +11,25 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+/**
+ * 会话存储服务（轻量级持久化）。
+ *
+ * <p>作用：
+ * <ul>
+ *   <li>为多轮问答提供上下文记忆（sessionId）</li>
+ *   <li>将会话历史持久化到本地 JSON 文件，便于服务重启后恢复</li>
+ * </ul>
+ *
+ * <p>当前实现基于内存 + 文件落盘，适合单机部署；
+ * 若升级为多实例，建议迁移到 Redis / 数据库。
+ */
 @Service
 public class SessionStoreService {
 
+    /** 会话落盘文件位置。 */
     private static final String STORAGE_FILE = "uploads/sessions.json";
+
+    /** 每个会话最多保留轮次，避免上下文无限膨胀。 */
     private static final int MAX_TURNS = 30;
 
     private final Map<String, SessionData> sessions = new ConcurrentHashMap<>();
@@ -26,6 +41,12 @@ public class SessionStoreService {
         loadFromDisk();
     }
 
+    /**
+     * 创建会话。
+     *
+     * @param name 会话名（可空）
+     * @return 新生成的 sessionId
+     */
     public String createSession(String name) {
         String sessionId = UUID.randomUUID().toString();
         SessionData data = new SessionData();
@@ -37,6 +58,11 @@ public class SessionStoreService {
         return sessionId;
     }
 
+    /**
+     * 追加一轮对话到指定会话。
+     *
+     * <p>会自动裁剪历史长度，控制上下文与存储成本。
+     */
     public void appendTurn(String sessionId, String role, String content) {
         SessionData data = sessions.computeIfAbsent(sessionId, this::newDefaultSession);
         data.getTurns().add(Map.of("role", role, "content", content));
