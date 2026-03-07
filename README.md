@@ -26,6 +26,16 @@
 ![本地部署](https://img.shields.io/badge/本地部署-✓-success?style=flat-square)
 ![开源](https://img.shields.io/badge/开源-❤-red?style=flat-square)
 
+## 🎬 Demo 视频
+
+<div align="center">
+  <video src="./20260307-0445-23.5742071.mp4" controls width="900" preload="metadata"></video>
+</div>
+
+- 在线/下载地址：[`20260307-0445-23.5742071.mp4`](./20260307-0445-23.5742071.mp4)
+
+> 说明：GitHub 对 README 内嵌视频支持有限；若页面不显示播放器，请点击上方链接下载本地观看。
+
 ---
 
 <p>
